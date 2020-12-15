@@ -1,0 +1,19 @@
+{
+  "name": "Webex Research Bot",
+  "version": "1.0.0",
+  "description": "Webex Bot with functionality to help research groups with citations and resources",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm install && node --use_strict index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ndbaker1/CiscoWebexHackathon2020.git"
+  },
+  "author": "Nicholas Baker",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "webex-node-bot-framework": "^2.3.1"
+  }
+}
