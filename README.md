@@ -2,4 +2,4 @@
 
 ## Startup
 In Separate Shells:
-`ngrok http 7001`   `npm start`
+`./ngrok http 7001`   `npm start`
