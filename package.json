@@ -1,5 +1,5 @@
 {
-  "name": "Webex Research Bot",
+  "name": "Webex-Research-Bot",
   "version": "1.0.0",
   "description": "Webex Bot with functionality to help research groups with citations and resources",
   "main": "index.js",
