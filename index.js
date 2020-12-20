@@ -22,20 +22,20 @@ framework.on("initialized", function () {
 
 let responded = false; // tracks if a response has been made, in order to find out if the user entered an invalid command
 
-const citations = [ // example resulting citations
+const entries = [
   {
+    reference: 'examplesite.test.com',
     citation: 'Franck, Caroline, et al. “Agricultural Subsidies and the American Obesity Epidemic.” American Journal of Preventative Medicine, vol. 45, no. 3, Sept. 2013, pp. 327-333.',
-    url: 'examplesite.test.com'
   },
   {
+    reference: 'anothersite.aaa',
     citation: 'Burke, Kenneth. Language as Symbolic Action: Essays on Life, Literature, and Method. University of California Press, 1966.',
-    url: 'anothersite.org'
   },
   {
+    reference: 'googlee.ee',
     citation: 'Best, David, and Sharon Marcus. “Surface Reading: An Introduction.” Representations, vol. 108, no. 1, Fall 2009, pp. 1-21. JSTOR, doi:10.1525/rep.2009.108.1.1',
-    url: 'googlee.ee'
   }
-];
+]
 
 framework.hears('edit', function (bot) {
   // removing citations
@@ -46,18 +46,24 @@ framework.hears('validate', function (bot, trigger) {
   responded = true;
   const URL = trigger.args[1];
   bot.say(`The site ${URL} is ${helpers.validateURL(URL)} percent valid.`).then(() => {
-    citations.push({
+    entries.push({
       citation: helpers.createCitation(URL),
       url: URL
     });
   });
 });
 
-framework.hears('citations', function (bot) {
-  console.log(`citations called`);
+framework.hears(/refs|references/i, function (bot) {
   responded = true;
-  citations.sort((a, b) => a.citation < b.citation ? -1 : 1);
-  helpers.printCitations(bot, citations);
+  console.log(`references called`);
+  helpers.printReferences(bot, entries);
+});
+
+framework.hears(/bib|bibliography|citations/i, function (bot) {
+  responded = true;
+  console.log(`citations called`);
+  entries.sort((a, b) => a.citation < b.citation ? -1 : 1);
+  helpers.printCitations(bot, entries);
 });
 
 // A spawn event is generated when the framework finds a space with your bot in it
@@ -99,23 +105,17 @@ framework.hears(/.*/, function (bot, trigger) {
 
 function sendHelp(bot) {
   bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
-    '1. **framework**   (learn more about the Webex Bot Framework) \n' +
-    '2. **info**  (get your personal details) \n' +
-    '3. **space**  (get details about this space) \n' +
-    '4. **card me** (a cool card!) \n' +
-    '5. **say hi to everyone** (everyone gets a greeting using a call to the Webex SDK) \n' +
-    '6. **reply** (have bot reply to your message) \n' +
-    '7. **help** (what you are reading now)');
+    '1. **refs, references** (list your current reference URLs)' +
+    '2. **bib, bibliography, citations** (display the bibliography page using your references)' + 
+    '3. **help** (what you are reading now)');
 }
 
 //Server config & housekeeping
-// Health Check
-app.get('/', function (req, res) {
-  res.send(`I'm alive.`);
-});
 
+// set the endpoint for the server POST to be the webex framework
 app.post('/', webhook(framework));
 
+// initialize the server
 var server = app.listen(config.port, function () {
   framework.debug('framework listening on port %s', config.port);
 });
