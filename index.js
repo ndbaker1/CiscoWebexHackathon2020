@@ -1,5 +1,10 @@
 //Webex Bot Starter - featuring the webex-node-bot-framework - https://www.npmjs.com/package/webex-node-bot-framework
-const helpers = require('./functions.js');
+const {
+  createCitation,
+  printCitations,
+  printReferences,
+  clearReferences
+} = require('./researchBot.js');
 
 const botFramework = require('webex-node-bot-framework');
 const webhook = require('webex-node-bot-framework/webhook');
@@ -22,21 +27,6 @@ framework.on("initialized", function () {
 
 let responded = false; // tracks if a response has been made, in order to find out if the user entered an invalid command
 
-const entries = [
-  {
-    reference: 'examplesite.test.com',
-    citation: 'Franck, Caroline, et al. “Agricultural Subsidies and the American Obesity Epidemic.” American Journal of Preventative Medicine, vol. 45, no. 3, Sept. 2013, pp. 327-333.',
-  },
-  {
-    reference: 'anothersite.aaa',
-    citation: 'Burke, Kenneth. Language as Symbolic Action: Essays on Life, Literature, and Method. University of California Press, 1966.',
-  },
-  {
-    reference: 'googlee.ee',
-    citation: 'Best, David, and Sharon Marcus. “Surface Reading: An Introduction.” Representations, vol. 108, no. 1, Fall 2009, pp. 1-21. JSTOR, doi:10.1525/rep.2009.108.1.1',
-  }
-]
-
 framework.hears('edit', function (bot) {
   // removing citations
 })
@@ -45,25 +35,30 @@ framework.hears('validate', function (bot, trigger) {
   console.log(`validate called`);
   responded = true;
   const URL = trigger.args[1];
-  bot.say(`The site ${URL} is ${helpers.validateURL(URL)} percent valid.`).then(() => {
-    entries.push({
-      citation: helpers.createCitation(URL),
-      url: URL
+  bot.say(`The site ${URL} is ${validateURL(URL)} percent valid.`).then(() => {
+    rooms[bot.room.title].push({
+      citation: createCitation(URL),
+      reference: URL
     });
   });
 });
 
+framework.hears(/clear|empty/i, function (bot) {
+  responded = true
+  console.log(`clear called`)
+  clearReferences(bot)
+});
+
 framework.hears(/refs|references/i, function (bot) {
-  responded = true;
-  console.log(`references called`);
-  helpers.printReferences(bot, entries);
+  responded = true
+  console.log(`references called`)
+  printReferences(bot)
 });
 
 framework.hears(/bib|bibliography|citations/i, function (bot) {
-  responded = true;
-  console.log(`citations called`);
-  entries.sort((a, b) => a.citation < b.citation ? -1 : 1);
-  helpers.printCitations(bot, entries);
+  responded = true
+  console.log(`citations called`)
+  printCitations(bot)
 });
 
 // A spawn event is generated when the framework finds a space with your bot in it
@@ -107,7 +102,8 @@ function sendHelp(bot) {
   bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
     '1. **refs, references** (list your current reference URLs)' +
     '2. **bib, bibliography, citations** (display the bibliography page using your references)' + 
-    '3. **help** (what you are reading now)');
+    '3. **clear, empty** (removes all references & citations)' + 
+    '4. **help** (what you are reading now)');
 }
 
 //Server config & housekeeping

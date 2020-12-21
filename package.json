@@ -4,7 +4,8 @@
   "description": "Webex Bot with functionality to help research groups with citations and resources",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && node start.js && nodemon --use_strict index.js"
+    "dev": "npm install && node start.js && nodemon --use_strict index.js",
+    "start": "npm install && node start.js && node --use_strict index.js"
   },
   "repository": {
     "type": "git",
