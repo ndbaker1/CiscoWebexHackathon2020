@@ -1,9 +1,12 @@
 //Webex Bot Starter - featuring the webex-node-bot-framework - https://www.npmjs.com/package/webex-node-bot-framework
 const {
-  createCitation,
   printCitations,
   printReferences,
-  clearReferences
+  clearReferences,
+  addReference,
+  removeReference,
+  formatCitationData,
+  handleAttachmentAction
 } = require('./researchBot.js');
 
 const botFramework = require('webex-node-bot-framework');
@@ -25,41 +28,42 @@ framework.on("initialized", function () {
   console.log("framework is all fired up! [Press CTRL-C to quit]");
 });
 
-let responded = false; // tracks if a response has been made, in order to find out if the user entered an invalid command
-
-framework.hears('edit', function (bot) {
-  // removing citations
+framework.on('attachmentAction', function (bot, trigger) {
+  handleAttachmentAction(bot, trigger.attachmentAction.inputs)
 })
 
-framework.hears('validate', function (bot, trigger) {
-  console.log(`validate called`);
-  responded = true;
-  const URL = trigger.args[1];
-  bot.say(`The site ${URL} is ${validateURL(URL)} percent valid.`).then(() => {
-    rooms[bot.room.title].push({
-      citation: createCitation(URL),
-      reference: URL
-    });
-  });
-});
+let responded = false; // tracks if a response has been made, in order to find out if the user entered an invalid command
+
+framework.hears(/add|add reference/i, function (bot, trigger) {
+  responded = true
+  console.log(`add called`)
+  addReference(bot)
+})
+
+framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
+  responded = true
+  console.log(`remove called`)
+  const removeIndex = trigger.args[2]
+  removeReference(bot, removeIndex)
+})
 
 framework.hears(/clear|empty/i, function (bot) {
   responded = true
   console.log(`clear called`)
   clearReferences(bot)
-});
+})
 
 framework.hears(/refs|references/i, function (bot) {
   responded = true
   console.log(`references called`)
   printReferences(bot)
-});
+})
 
 framework.hears(/bib|bibliography|citations/i, function (bot) {
   responded = true
   console.log(`citations called`)
   printCitations(bot)
-});
+})
 
 // A spawn event is generated when the framework finds a space with your bot in it
 // If actorId is set, it means that user has just added your bot to a new space
@@ -68,8 +72,8 @@ framework.on('spawn', (bot, id, actorId) => {
   if (!actorId) {
     console.log(`While starting up, the framework found our bot in a space called: ${bot.room.title}`);
   } else {
-    bot.say('markdown', 'You can say `help` to get the list of words I am able to respond to.' + 
-      ( !bot.isDirect ? `\n\nDon't forget, in order for me to see your messages in this group space, be sure to *@mention* ${bot.person.displayName}.` : '' ));
+    bot.say('markdown', 'You can say `help` to get the list of words I am able to respond to.' +
+      (!bot.isDirect ? `\n\nDon't forget, in order for me to see your messages in this group space, be sure to *@mention* ${bot.person.displayName}.` : ''));
   }
 });
 
@@ -100,9 +104,9 @@ framework.hears(/.*/, function (bot, trigger) {
 
 function sendHelp(bot) {
   bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
-    '1. **refs, references** (list your current reference URLs)' +
-    '2. **bib, bibliography, citations** (display the bibliography page using your references)' + 
-    '3. **clear, empty** (removes all references & citations)' + 
+    '1. **refs, references** (list your current reference URLs)\n' +
+    '2. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
+    '3. **clear, empty** (removes all references & citations)\n' +
     '4. **help** (what you are reading now)');
 }
 

@@ -1,12 +1,8 @@
-const fs = require('fs');
+const fs = require('fs')
+
 const roomsDir = 'rooms'
 
-exports.validateURL = (URL) => {
-  console.log('validate function called')
-  return 50;
-}
-
-exports.roomData = (function() {
+exports.roomData = (function () {
   const roomData = {}
   for (const roomFile of fs.readdirSync(roomsDir)) {
     if (roomFile.endsWith('.json')) {
@@ -24,11 +20,13 @@ exports.clearReferences = (bot) => {
 }
 
 exports.addReference = (bot) => {
-
+  bot.sendCard(addReferenceCard())
 }
 
-exports.removeReference = (bot) => {
-  
+exports.removeReference = (bot, index) => {
+  const referenceURL = getEntries(bot)[+index].reference
+  removeEntry(bot, +index)
+  bot.say('Removed ' + referenceURL + ' from references.')
 }
 
 exports.printReferences = (bot) => {
@@ -39,10 +37,9 @@ exports.printReferences = (bot) => {
   }
 }
 
-
 exports.printCitations = (bot) => {
   if (getEntries(bot).length > 0) {
-    const cardJSON = generateCardTemplate(getEntries(bot))
+    const cardJSON = generateCitationsCard(getEntries(bot))
     bot.say('Bibliography').then(() => {
       bot.sendCard(cardJSON, 'JSON Card could not be loaded...');
     })
@@ -51,8 +48,28 @@ exports.printCitations = (bot) => {
   }
 }
 
+/**
+ * Response to a JSON card submission
+ */
+exports.handleAttachmentAction = (bot, inputs) => {
+  if (inputs.type == 'add reference') {
+    addEntry(bot, {
+      reference: inputs.reference,
+      citation: 'test citation'//formatCitationData(inputs)
+    })
+    bot.say('Reference Added.')
+  }
+}
+
+/**
+ * Turn object with citation data into an mla, apa, or etc citation string
+ */
+function formatCitationData(citationData) {
+  return;
+}
+
 // returns the template for a JSON adaptive card
-function generateCardTemplate(entries) {
+function generateCitationsCard(entries) {
   return {
     $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
     type: 'AdaptiveCard',
@@ -78,6 +95,73 @@ function generateCardTemplate(entries) {
   }
 }
 
+function addReferenceCard() {
+  return {
+    "type": "AdaptiveCard",
+    "body": [
+      {
+        "type": "ColumnSet",
+        "columns": [
+          {
+            "type": "Column",
+            "width": 35,
+            "items": [
+              {
+                "type": "Input.Text",
+                "id": "reference",
+                "placeholder": "Reference URL"
+              },
+              {
+                "type": "Input.Text",
+                "id": "author",
+                "placeholder": "Author"
+              },
+              {
+                "type": "TextBlock",
+                "text": "Citation Format"
+              },
+              {
+                "type": "Input.ChoiceSet",
+                "placeholder": "Placeholder text",
+                "choices": [
+                  {
+                    "title": "MLA",
+                    "value": "mla"
+                  },
+                  {
+                    "title": "APA",
+                    "value": "apa"
+                  }
+                ],
+                "id": "format",
+                "style": "expanded"
+              }
+            ]
+          }
+        ],
+        "spacing": "Padding",
+        "horizontalAlignment": "Center"
+      },
+      {
+        "type": "ActionSet",
+        "actions": [
+          {
+            "type": "Action.Submit",
+            "title": "Add Reference with Citation",
+            "data": {
+              type: "add reference"
+            }
+          }
+        ],
+        "horizontalAlignment": "Center",
+        "spacing": "Large"
+      }
+    ],
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.2"
+  }
+}
+
 function getEntries(bot) {
   return exports.roomData[bot.room.title]
 }
@@ -85,30 +169,15 @@ function getEntries(bot) {
 function addEntry(bot, entry) {
   exports.roomData[bot.room.title].push(entry)
   exports.roomData[bot.room.title].sort((a, b) => a.citation < b.citation ? -1 : 1);
-  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title]))
+  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title], null, 2))
 }
 
 function removeEntry(bot, index) {
   exports.roomData[bot.room.title].splice(index, 1)
-  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title]))
+  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title], null, 2))
 }
 
 function setEntries(bot, newEntries) {
   exports.roomData[bot.room.title] = newEntries
   fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, '[]')
 }
-
-[
-  {
-    "reference": "examplesite.test.com",
-    "citation": "Franck, Caroline, et al. “Agricultural Subsidies and the American Obesity Epidemic.” American Journal of Preventative Medicine, vol. 45, no. 3, Sept. 2013, pp. 327-333."
-  },
-  {
-    "reference": "anothersite.abb",
-    "citation": "Burke, Kenneth. Language as Symbolic Action: Essays on Life, Literature, and Method. University of California Press, 1966."
-  },
-  {
-    "reference": "googlee.ee",
-    "citation": "Best, David, and Sharon Marcus. “Surface Reading: An Introduction.” Representations, vol. 108, no. 1, Fall 2009, pp. 1-21. JSTOR, doi:10.1525/rep.2009.108.1.1"
-  }
-]
