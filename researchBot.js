@@ -14,6 +14,12 @@ exports.roomData = (function () {
   return roomData
 })()
 
+exports.initializeRoom = (bot) => {
+  if (getEntries(bot) === undefined) [
+    setEntries(bot, [])
+  ]
+}
+
 exports.clearReferences = (bot) => {
   setEntries(bot, []) // destroys the refernce to the old list of references
   bot.say('References Cleared.')
@@ -181,3 +187,4 @@ function setEntries(bot, newEntries) {
   exports.roomData[bot.room.title] = newEntries
   fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, '[]')
 }
+

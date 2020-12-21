@@ -5,7 +5,7 @@ const {
   clearReferences,
   addReference,
   removeReference,
-  formatCitationData,
+  initializeRoom,
   handleAttachmentAction
 } = require('./researchBot.js');
 
@@ -43,7 +43,7 @@ framework.hears(/add|add reference/i, function (bot, trigger) {
 framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
   responded = true
   console.log(`remove called`)
-  const removeIndex = trigger.args[2]
+  const removeIndex = +trigger.args[2] || +trigger.args[3] || '0'
   removeReference(bot, removeIndex)
 })
 
@@ -70,6 +70,7 @@ framework.hears(/bib|bibliography|citations/i, function (bot) {
 // If not, the framework has discovered your bot in an existing space
 framework.on('spawn', (bot, id, actorId) => {
   if (!actorId) {
+    initializeRoom(bot)
     console.log(`While starting up, the framework found our bot in a space called: ${bot.room.title}`);
   } else {
     bot.say('markdown', 'You can say `help` to get the list of words I am able to respond to.' +
@@ -104,10 +105,12 @@ framework.hears(/.*/, function (bot, trigger) {
 
 function sendHelp(bot) {
   bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
-    '1. **refs, references** (list your current reference URLs)\n' +
-    '2. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
+    '1. **add, add reference** (display an interface for adding references)\n' +
+    '2. **rm, remove, remove reference** (remove a reference based on position)\n' +
     '3. **clear, empty** (removes all references & citations)\n' +
-    '4. **help** (what you are reading now)');
+    '4. **refs, references** (list your current reference URLs)\n' +
+    '5. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
+    '6. **help** (what you are reading now)');
 }
 
 //Server config & housekeeping
