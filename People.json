@@ -18,5 +18,9 @@
   {
     "reference": "dsa22",
     "citation": "test citation"
+  },
+  {
+    "reference": "ret",
+    "citation": "test citation"
   }
 ]

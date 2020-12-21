@@ -1,41 +1,78 @@
 const fs = require('fs')
 
-const roomsDir = 'rooms'
+exports.researchBotBootstrap = function (framework, callback) {
+  framework.on('attachmentAction', function (bot, trigger) {
+    handleAttachmentAction(bot, trigger.attachmentAction.inputs)
+  })
 
-exports.roomData = (function () {
-  const roomData = {}
-  for (const roomFile of fs.readdirSync(roomsDir)) {
-    if (roomFile.endsWith('.json')) {
-      const roomName = roomFile.substring(0, roomFile.lastIndexOf('.json'))
-      const jsonString = fs.readFileSync(`${roomsDir}/${roomFile}`).toString()
-      roomData[roomName] = JSON.parse(jsonString)
-    }
-  }
-  return roomData
-})()
+  framework.hears(/add|add reference/i, function (bot) {
+    callback('add')
+    bot.sendCard(addReferenceCard(bot))
+  })
 
-exports.initializeRoom = (bot) => {
-  if (getEntries(bot) === undefined) {
+  framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
+    callback('remove')
+    const removeIndex = +trigger.args[2] || +trigger.args[3] || '0'
+    removeReference(bot, removeIndex)
+  })
+
+  framework.hears(/clear|empty/i, function (bot) {
+    callback('clear')
+    clearReferences(bot)
+  })
+
+  framework.hears(/refs|references/i, function (bot) {
+    callback('references')
+    printReferences(bot)
+  })
+
+  framework.hears(/bib|bibliography|citations/i, function (bot) {
+    callback('citations')
+    printCitations(bot)
+  })
+
+  // Leave the room
+  framework.hears(/exit|leave/i, function (bot) {
+    callback('exit')
+    bot.say('Goodbye!')
+      .then(() => fs.unlinkSync(`${roomsDir}/${bot.room.id}.json`))
+      .then(() => bot.exit())
+  })
+}
+
+const roomsDir = 'src/rooms' // relative to the 
+const roomData = {}
+
+exports.initializeBot = function (bot) {
+  const dataFile = `${roomsDir}/${bot.room.id}.json`
+  if (fs.existsSync(dataFile)) {
+    const jsonString = fs.readFileSync(dataFile).toString()
+    roomData[bot.room.id] = JSON.parse(jsonString)
+  } else {
     setEntries(bot, [])
   }
 }
 
-exports.clearReferences = (bot) => {
+function clearReferences(bot) {
   setEntries(bot, []) // destroys the refernce to the old list of references
   bot.say('References Cleared.')
 }
 
-exports.addReference = (bot) => {
-  bot.sendCard(addReferenceCard())
+function addReference(bot, inputs) {
+  addEntry(bot, {
+    reference: inputs.reference,
+    citation: formatCitationData(inputs)
+  })
+  bot.say('Reference Added for ' + inputs.reference + '.')
 }
 
-exports.removeReference = (bot, index) => {
-  const referenceURL = getEntries(bot)[+index].reference
+function removeReference(bot, index) {
+  // + indicates str-to-int conversion
   removeEntry(bot, +index)
-  bot.say('Removed ' + referenceURL + ' from references.')
+  bot.say('Removed ' + getEntries(bot)[+index].reference + ' from references.')
 }
 
-exports.printReferences = (bot) => {
+function printReferences(bot) {
   if (getEntries(bot).length > 0) {
     bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n* ${entry.reference}`, 'References:'));
   } else {
@@ -43,12 +80,10 @@ exports.printReferences = (bot) => {
   }
 }
 
-exports.printCitations = (bot) => {
+function printCitations(bot) {
   if (getEntries(bot).length > 0) {
     const cardJSON = generateCitationsCard(getEntries(bot))
-    bot.say('Bibliography').then(() => {
-      bot.sendCard(cardJSON, 'JSON Card could not be loaded...');
-    })
+    bot.say('Bibliography').then(() => bot.sendCard(cardJSON, 'JSON Card could not be loaded...'))
   } else {
     bot.say('There are currently no references.')
   }
@@ -57,13 +92,9 @@ exports.printCitations = (bot) => {
 /**
  * Response to a JSON card submission
  */
-exports.handleAttachmentAction = (bot, inputs) => {
+function handleAttachmentAction(bot, inputs) {
   if (inputs.type == 'add reference') {
-    addEntry(bot, {
-      reference: inputs.reference,
-      citation: 'test citation'//formatCitationData(inputs)
-    })
-    bot.say('Reference Added.')
+    addReference(bot, inputs)
   }
 }
 
@@ -71,7 +102,7 @@ exports.handleAttachmentAction = (bot, inputs) => {
  * Turn object with citation data into an mla, apa, or etc citation string
  */
 function formatCitationData(citationData) {
-  return;
+  return 'test citation';
 }
 
 // returns the template for a JSON adaptive card
@@ -169,22 +200,22 @@ function addReferenceCard() {
 }
 
 function getEntries(bot) {
-  return exports.roomData[bot.room.title]
+  return roomData[bot.room.id]
 }
 
 function addEntry(bot, entry) {
-  exports.roomData[bot.room.title].push(entry)
-  exports.roomData[bot.room.title].sort((a, b) => a.citation < b.citation ? -1 : 1);
-  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title], null, 2))
+  roomData[bot.room.id].push(entry)
+  roomData[bot.room.id].sort((a, b) => a.citation < b.citation ? -1 : 1);
+  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2))
 }
 
 function removeEntry(bot, index) {
-  exports.roomData[bot.room.title].splice(index, 1)
-  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, JSON.stringify(exports.roomData[bot.room.title], null, 2))
+  roomData[bot.room.id].splice(index, 1)
+  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2))
 }
 
 function setEntries(bot, newEntries) {
-  exports.roomData[bot.room.title] = newEntries
-  fs.writeFileSync(`${roomsDir}/${bot.room.title}.json`, '[]')
+  roomData[bot.room.id] = newEntries
+  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, '[]')
 }
 

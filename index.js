@@ -1,18 +1,12 @@
-//Webex Bot Starter - featuring the webex-node-bot-framework - https://www.npmjs.com/package/webex-node-bot-framework
-const {
-  printCitations,
-  printReferences,
-  clearReferences,
-  addReference,
-  removeReference,
-  initializeRoom,
-  handleAttachmentAction
-} = require('./researchBot.js');
 
 const botFramework = require('webex-node-bot-framework');
 const webhook = require('webex-node-bot-framework/webhook');
 const express = require('express');
 const bodyParser = require('body-parser');
+const {
+  researchBotBootstrap,
+  initializeBot,
+} = require('./src/researchBot.js');
 
 const app = express();
 app.use(bodyParser.json());
@@ -28,49 +22,22 @@ framework.on("initialized", function () {
   console.log("framework is all fired up! [Press CTRL-C to quit]");
 });
 
-framework.on('attachmentAction', function (bot, trigger) {
-  handleAttachmentAction(bot, trigger.attachmentAction.inputs)
-})
-
 let responded = false; // tracks if a response has been made, in order to find out if the user entered an invalid command
 
-framework.hears(/add|add reference/i, function (bot, trigger) {
-  responded = true
-  console.log(`add called`)
-  addReference(bot)
-})
-
-framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
-  responded = true
-  console.log(`remove called`)
-  const removeIndex = +trigger.args[2] || +trigger.args[3] || '0'
-  removeReference(bot, removeIndex)
-})
-
-framework.hears(/clear|empty/i, function (bot) {
-  responded = true
-  console.log(`clear called`)
-  clearReferences(bot)
-})
-
-framework.hears(/refs|references/i, function (bot) {
-  responded = true
-  console.log(`references called`)
-  printReferences(bot)
-})
-
-framework.hears(/bib|bibliography|citations/i, function (bot) {
-  responded = true
-  console.log(`citations called`)
-  printCitations(bot)
-})
+researchBotBootstrap(
+  framework,
+  (operation) => {
+    console.log(operation + ' called');
+    responded = true;
+  }
+)
 
 // A spawn event is generated when the framework finds a space with your bot in it
 // If actorId is set, it means that user has just added your bot to a new space
 // If not, the framework has discovered your bot in an existing space
 framework.on('spawn', (bot, id, actorId) => {
+  initializeBot(bot)
   if (!actorId) {
-    initializeRoom(bot)
     console.log(`While starting up, the framework found our bot in a space called: ${bot.room.title}`);
   } else {
     bot.say('markdown', 'You can say `help` to get the list of words I am able to respond to.' +
@@ -106,11 +73,12 @@ framework.hears(/.*/, function (bot, trigger) {
 function sendHelp(bot) {
   bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
     '1. **add, add reference** (display an interface for adding references)\n' +
-    '2. **rm, remove, remove reference** (remove a reference based on position)\n' +
+    '2. **rm, remove, remove reference { followed by a number }** (remove a reference based on position)\n' +
     '3. **clear, empty** (removes all references & citations)\n' +
     '4. **refs, references** (list your current reference URLs)\n' +
     '5. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
-    '6. **help** (what you are reading now)');
+    '6. **help** (what you are reading now)\n' +
+    '7. **exit, leave** (tell the bot to remove itself from the room)');
 }
 
 //Server config & housekeeping
