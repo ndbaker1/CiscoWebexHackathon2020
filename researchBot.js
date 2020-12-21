@@ -15,9 +15,9 @@ exports.roomData = (function () {
 })()
 
 exports.initializeRoom = (bot) => {
-  if (getEntries(bot) === undefined) [
+  if (getEntries(bot) === undefined) {
     setEntries(bot, [])
-  ]
+  }
 }
 
 exports.clearReferences = (bot) => {
