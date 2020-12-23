@@ -159,7 +159,8 @@ function addReferenceCard() {
               },
               {
                 "type": "Input.ChoiceSet",
-                "placeholder": "Placeholder text",
+                "isMultiSelect": false,
+                "style": "compact",
                 "choices": [
                   {
                     "title": "MLA",
@@ -170,8 +171,7 @@ function addReferenceCard() {
                     "value": "apa"
                   }
                 ],
-                "id": "format",
-                "style": "expanded"
+                "id": "format"
               }
             ]
           }
