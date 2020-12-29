@@ -12,7 +12,7 @@ exports.researchBotBootstrap = function (framework, callback) {
 
   framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
     callback('remove')
-    const removeIndex = +trigger.args[2] || +trigger.args[3] || '0'
+    const removeIndex = +trigger.args[2] || +trigger.args[3] || '0' // if the second or third arg is not a number, then use 0
     removeReference(bot, removeIndex)
   })
 
@@ -40,7 +40,7 @@ exports.researchBotBootstrap = function (framework, callback) {
   })
 }
 
-const roomsDir = 'src/rooms' // relative to the 
+const roomsDir = 'src/rooms' // relative to the root dir
 const roomData = {}
 
 exports.initializeBot = function (bot) {
@@ -54,7 +54,7 @@ exports.initializeBot = function (bot) {
 }
 
 function clearReferences(bot) {
-  setEntries(bot, []) // destroys the refernce to the old list of references
+  setEntries(bot, []) // destroys the old list of references
   bot.say('References Cleared.')
 }
 
@@ -102,7 +102,11 @@ function handleAttachmentAction(bot, inputs) {
  * Turn object with citation data into an mla, apa, or etc citation string
  */
 function formatCitationData(citationData) {
-  return 'test citation';
+  const getField = field => (citationData[field] || '').trim() // safe access which wont return undefined
+  switch (getField('format') || 'MLA') {
+    case 'MLA': return `${getField('author')}. "${getField('title')}." ${getField('container')}, ${getField('reference')}`
+    case 'APA': return ``
+  }
 }
 
 // returns the template for a JSON adaptive card
@@ -117,19 +121,48 @@ function generateCitationsCard(entries) {
         columns: [
           {
             type: 'Column',
-            items: entries.map(entry => {
-              return {
-                type: 'TextBlock',
-                text: entry.citation,
-                size: 'small', // maybe use 'medium'
-                wrap: true,
-              }
-            })
+            items: entries.map(entry => ({
+              type: 'TextBlock',
+              text: entry.citation,
+              size: 'small', // maybe use 'medium'
+              wrap: true,
+            }))
           }
         ]
       }
     ]
   }
+}
+
+const CITATION_FIELDS = ['reference', 'author', 'title', 'container']
+const CITATIONS_CHOICES = ['MLA', 'APA']
+const SOURCE_TYPES = ['book', 'article', 'website']
+
+function inputCardItem(inputID, placeholder) {
+  return {
+    type: "Input.Text",
+    id: inputID,
+    placeholder: placeholder
+  }
+}
+
+function choiceCardItem(inputID, options) {
+  return [
+    {
+      type: "TextBlock",
+      text: "Citation Format"
+    },
+    {
+      type: "Input.ChoiceSet",
+      isMultiSelect: false,
+      style: "compact",
+      choices: options.map(option => ({
+        title: option,
+        value: option
+      })),
+      id: inputID
+    }
+  ]
 }
 
 function addReferenceCard() {
@@ -143,36 +176,9 @@ function addReferenceCard() {
             "type": "Column",
             "width": 35,
             "items": [
-              {
-                "type": "Input.Text",
-                "id": "reference",
-                "placeholder": "Reference URL"
-              },
-              {
-                "type": "Input.Text",
-                "id": "author",
-                "placeholder": "Author"
-              },
-              {
-                "type": "TextBlock",
-                "text": "Citation Format"
-              },
-              {
-                "type": "Input.ChoiceSet",
-                "isMultiSelect": false,
-                "style": "compact",
-                "choices": [
-                  {
-                    "title": "MLA",
-                    "value": "mla"
-                  },
-                  {
-                    "title": "APA",
-                    "value": "apa"
-                  }
-                ],
-                "id": "format"
-              }
+              ...choiceCardItem('sourceType', SOURCE_TYPES),
+              ...CITATION_FIELDS.map(field => inputCardItem(field, field)),
+              ...choiceCardItem('format', CITATIONS_CHOICES)
             ]
           }
         ],
@@ -186,7 +192,7 @@ function addReferenceCard() {
             "type": "Action.Submit",
             "title": "Add Reference with Citation",
             "data": {
-              type: "add reference"
+              "type": "add reference" // this is where 
             }
           }
         ],
@@ -199,6 +205,7 @@ function addReferenceCard() {
   }
 }
 
+// entries are the arrays of { reference, citation } dicts
 function getEntries(bot) {
   return roomData[bot.room.id]
 }
