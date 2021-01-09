@@ -1,6 +1,9 @@
 # data
 src/rooms
 
+# executables
+ngrok.exe
+
 # Logs
 logs
 *.log
