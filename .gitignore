@@ -2,7 +2,7 @@
 src/rooms
 
 # executables
-ngrok.exe
+ngrok.*
 
 # Logs
 logs
