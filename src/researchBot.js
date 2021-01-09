@@ -22,7 +22,7 @@ exports.researchBotBootstrap = function (framework, callback) {
 
   framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
     callback('remove')
-    const removeIndex = +trigger.args[2] || +trigger.args[3] || '0' // if the second or third arg is not a number, then use 0
+    const removeIndex = +trigger.args[2] || +trigger.args[3] || 0 // if the second or third arg is not a number, then use 0
     removeReference(bot, removeIndex)
   })
 
@@ -77,15 +77,19 @@ function addReference(bot, inputs) {
 }
 
 function removeReference(bot, index) {
-  // + indicates str-to-int conversion
-  const referenceToRemove = getEntries(bot)[+index].reference
-  removeEntry(bot, +index)
-  bot.say('Removed ' + referenceToRemove + ' from references.')
+  if (index >= 1 && index <= getEntries(bot).length) {
+    const referenceToRemove = getEntries(bot)[index - 1].reference
+    removeEntry(bot, index - 1)
+    bot.say('Removed ' + referenceToRemove + ' from references.')
+  } else {
+    bot.say('Invalid index ' + index + ' in reference set.')
+  }
 }
 
 function printReferences(bot) {
   if (getEntries(bot).length > 0) {
-    bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n* ${entry.reference}`, 'References:'));
+    let counter = 1
+    bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n${counter++}. ${entry.reference}`, 'References:'));
   } else {
     bot.say('There are currently no references.')
   }
@@ -93,7 +97,8 @@ function printReferences(bot) {
 
 function printCitations(bot) {
   if (getEntries(bot).length > 0) {
-    bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n* ${entry.citation}`, 'Bibliographies:'))
+    let counter = 1
+    bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n${counter++}. ${entry.citation}`, 'Bibliographies:'))
   } else {
     bot.say('There are currently no references.')
   }
