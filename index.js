@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const {
   researchBotBootstrap,
   initializeBot,
+  commandListString
 } = require('./src/researchBot.js');
 
 const app = express();
@@ -71,14 +72,7 @@ framework.hears(/.*/, function (bot, trigger) {
 });
 
 function sendHelp(bot) {
-  bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' +
-    '1. **add, add reference** (display an interface for adding references)\n' +
-    '2. **rm, remove, remove reference { followed by a number }** (remove a reference based on position)\n' +
-    '3. **clear, empty** (removes all references & citations)\n' +
-    '4. **refs, references** (list your current reference URLs)\n' +
-    '5. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
-    '6. **help** (what you are reading now)\n' +
-    '7. **exit, leave** (tell the bot to remove itself from the room)');
+  bot.say("markdown", 'These are the commands I can respond to:', '\n\n ' + commandListString);
 }
 
 //Server config & housekeeping

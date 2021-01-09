@@ -1,5 +1,14 @@
 const fs = require('fs')
 
+exports.commandListString =
+  '1. **add, add reference** (display an interface for adding references)\n' +
+  '2. **rm, remove, remove reference { followed by a number }** (remove a reference based on index starting at 0)\n' +
+  '3. **clear, empty** (removes all references & citations)\n' +
+  '4. **refs, references** (list your current reference URLs)\n' +
+  '5. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
+  '6. **help** (what you are reading now)\n' +
+  '7. **exit, leave** (tell the bot to remove itself from the room)'
+
 exports.researchBotBootstrap = function (framework, callback) {
   framework.on('attachmentAction', function (bot, trigger) {
     handleAttachmentAction(bot, trigger.attachmentAction.inputs)
@@ -60,10 +69,10 @@ function clearReferences(bot) {
 
 function addReference(bot, inputs) {
   addEntry(bot, {
-    reference: inputs.reference,
+    reference: inputs.Reference,
     citation: formatCitationData(inputs)
   })
-  bot.say('Reference Added for ' + inputs.reference + '.')
+  bot.say('Reference Added for ' + inputs.Reference + '.')
 }
 
 function removeReference(bot, index) {
@@ -83,7 +92,7 @@ function printReferences(bot) {
 function printCitations(bot) {
   if (getEntries(bot).length > 0) {
     const cardJSON = generateCitationsCard(getEntries(bot))
-    bot.say('Bibliography').then(() => bot.sendCard(cardJSON, 'JSON Card could not be loaded...'))
+    bot.say('Bibliography:').then(() => bot.sendCard(cardJSON, 'JSON Card could not be loaded...'))
   } else {
     bot.say('There are currently no references.')
   }
@@ -104,7 +113,7 @@ function handleAttachmentAction(bot, inputs) {
 function formatCitationData(citationData) {
   const getField = field => (citationData[field] || '').trim() // safe access which wont return undefined
   switch (getField('format') || 'MLA') {
-    case 'MLA': return `${getField('author')}. "${getField('title')}." ${getField('container')}, ${getField('reference')}`
+    case 'MLA': return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
     case 'APA': return ``
   }
 }
@@ -124,7 +133,7 @@ function generateCitationsCard(entries) {
             items: entries.map(entry => ({
               type: 'TextBlock',
               text: entry.citation,
-              size: 'small', // maybe use 'medium'
+              size: 'medium', // maybe use 'medium'
               wrap: true,
             }))
           }
@@ -133,16 +142,32 @@ function generateCitationsCard(entries) {
     ]
   }
 }
-
-const CITATION_FIELDS = ['reference', 'author', 'title', 'container']
+const CITATION_FIELD_DATA_ARRAY = [
+  {
+    id: 'Reference',
+    placeholder: 'Reference URL or Name'
+  },
+  {
+    id: 'Author',
+    placeholder: 'Author',
+  },
+  {
+    id: 'Title',
+    placeholder: 'Title',
+  },
+  {
+    id: 'Container',
+    placeholder: 'Container (News Network, Literary Work, etc..)',
+  }
+]
 const CITATIONS_CHOICES = ['MLA', 'APA']
-const SOURCE_TYPES = ['book', 'article', 'website']
+const SOURCE_TYPES = ['Book', 'Article', 'Website']
 
-function inputCardItem(inputID, placeholder) {
+function inputCardItem(fieldData) {
   return {
     type: "Input.Text",
-    id: inputID,
-    placeholder: placeholder
+    id: fieldData.id,
+    placeholder: fieldData.placeholder
   }
 }
 
@@ -177,7 +202,7 @@ function addReferenceCard() {
             "width": 35,
             "items": [
               ...choiceCardItem('sourceType', SOURCE_TYPES),
-              ...CITATION_FIELDS.map(field => inputCardItem(field, field)),
+              ...CITATION_FIELD_DATA_ARRAY.map(field => inputCardItem(field)),
               ...choiceCardItem('format', CITATIONS_CHOICES)
             ]
           }
