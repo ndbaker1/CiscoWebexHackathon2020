@@ -113,8 +113,10 @@ function handleAttachmentAction(bot, inputs) {
 function formatCitationData(citationData) {
   const getField = field => (citationData[field] || '').trim() // safe access which wont return undefined
   switch (getField('format') || 'MLA') {
-    case 'MLA': return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
-    case 'APA': return ``
+    case 'MLA':
+      return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
+    case 'APA':
+      return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
   }
 }
 
