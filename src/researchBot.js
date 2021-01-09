@@ -1,4 +1,5 @@
 const fs = require('fs')
+const mkdirp = require('mkdirp')
 
 exports.commandListString =
   '1. **add, add reference** (display an interface for adding references)\n' +
@@ -58,12 +59,12 @@ exports.initializeBot = function (bot) {
     const jsonString = fs.readFileSync(dataFile).toString()
     roomData[bot.room.id] = JSON.parse(jsonString)
   } else {
-    setEntries(bot, [])
+    clearEntries(bot)
   }
 }
 
 function clearReferences(bot) {
-  setEntries(bot, []) // destroys the old list of references
+  clearEntries(bot) // destroys the old list of references
   bot.say('References Cleared.')
 }
 
@@ -77,8 +78,9 @@ function addReference(bot, inputs) {
 
 function removeReference(bot, index) {
   // + indicates str-to-int conversion
+  const referenceToRemove = getEntries(bot)[+index].reference
   removeEntry(bot, +index)
-  bot.say('Removed ' + getEntries(bot)[+index].reference + ' from references.')
+  bot.say('Removed ' + referenceToRemove + ' from references.')
 }
 
 function printReferences(bot) {
@@ -91,8 +93,7 @@ function printReferences(bot) {
 
 function printCitations(bot) {
   if (getEntries(bot).length > 0) {
-    const cardJSON = generateCitationsCard(getEntries(bot))
-    bot.say('Bibliography:').then(() => bot.sendCard(cardJSON, 'JSON Card could not be loaded...'))
+    bot.say('markdown', getEntries(bot).reduce((acc, entry) => acc + `\n* ${entry.citation}`, 'Bibliographies:'))
   } else {
     bot.say('There are currently no references.')
   }
@@ -112,50 +113,33 @@ function handleAttachmentAction(bot, inputs) {
  */
 function formatCitationData(citationData) {
   const getField = field => (citationData[field] || '').trim() // safe access which wont return undefined
+  const dateInfo = new Date().toDateString().split(' ')
   switch (getField('format') || 'MLA') {
-    case 'MLA':
-      return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
-    case 'APA':
-      return `${getField('Author')}. "${getField('Title')}." ${getField('Container')}, ${getField('Reference')}`
+    default:
+      return `${getField('Authors')}.` +
+        ` "${getField('Title')}."` +
+        ` _${getField('Container')}_,` +
+        ` ${getField('Publish Date')},` +
+        ` ${getField('Reference')}. Accessed ${+dateInfo[2]} ${dateInfo[1]} ${dateInfo[3]}.`
   }
 }
 
-// returns the template for a JSON adaptive card
-function generateCitationsCard(entries) {
-  return {
-    $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-    type: 'AdaptiveCard',
-    version: '1.0',
-    body: [
-      {
-        type: 'ColumnSet',
-        columns: [
-          {
-            type: 'Column',
-            items: entries.map(entry => ({
-              type: 'TextBlock',
-              text: entry.citation,
-              size: 'medium', // maybe use 'medium'
-              wrap: true,
-            }))
-          }
-        ]
-      }
-    ]
-  }
-}
 const CITATION_FIELD_DATA_ARRAY = [
   {
     id: 'Reference',
     placeholder: 'Reference URL or Name'
   },
   {
-    id: 'Author',
-    placeholder: 'Author',
+    id: 'Authors',
+    placeholder: 'Authors',
   },
   {
     id: 'Title',
     placeholder: 'Title',
+  },
+  {
+    id: 'Publish Date',
+    placeholder: 'Date Published'
   },
   {
     id: 'Container',
@@ -163,7 +147,7 @@ const CITATION_FIELD_DATA_ARRAY = [
   }
 ]
 const CITATIONS_CHOICES = ['MLA', 'APA']
-const SOURCE_TYPES = ['Book', 'Article', 'Website']
+const SOURCE_TYPES = ['Website', 'Book', 'Article']
 
 function inputCardItem(fieldData) {
   return {
@@ -240,16 +224,16 @@ function getEntries(bot) {
 function addEntry(bot, entry) {
   roomData[bot.room.id].push(entry)
   roomData[bot.room.id].sort((a, b) => a.citation < b.citation ? -1 : 1);
-  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2))
+  mkdirp(roomsDir).then(() => fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2)))
 }
 
 function removeEntry(bot, index) {
   roomData[bot.room.id].splice(index, 1)
-  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2))
+  mkdirp(roomsDir).then(() => fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, JSON.stringify(roomData[bot.room.id], null, 2)))
 }
 
-function setEntries(bot, newEntries) {
-  roomData[bot.room.id] = newEntries
-  fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, '[]')
+function clearEntries(bot) {
+  roomData[bot.room.id] = []
+  mkdirp(roomsDir).then(() => fs.writeFileSync(`${roomsDir}/${bot.room.id}.json`, '[]'))
 }
 
