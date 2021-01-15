@@ -3,7 +3,7 @@ const mkdirp = require('mkdirp')
 
 exports.commandListString =
   '1. **add, add reference** (display an interface for adding references)\n' +
-  '2. **rm, remove, remove reference { followed by a number }** (remove a reference based on index starting at 0)\n' +
+  '2. **rm, remove, remove reference { followed by a number }** (remove a reference based on index starting at 1)\n' +
   '3. **clear, empty** (removes all references & citations)\n' +
   '4. **refs, references** (list your current reference URLs)\n' +
   '5. **bib, bibliography, citations** (display the bibliography page using your references)\n' +
