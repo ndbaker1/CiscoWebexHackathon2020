@@ -17,7 +17,7 @@ exports.researchBotBootstrap = function (framework, callback) {
 
   framework.hears(/add|add reference/i, function (bot) {
     callback('add')
-    bot.sendCard(addReferenceCard(bot))
+    bot.sendCard(addReferenceCard(bot), 'The Response Could not be loaded properly.')
   })
 
   framework.hears(/rm|remove|remove reference/i, function (bot, trigger) {
@@ -217,7 +217,7 @@ function addReferenceCard() {
       }
     ],
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-    "version": "1.2"
+    "version": "1.0"
   }
 }
 
