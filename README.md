@@ -17,6 +17,8 @@ A service we want to provide is the ability to create resource citations and hel
 In Separate Shells:
 ```
 ./ngrok http 7001
+
+npm install
 npm start
 ```
 `config.json` should be in the form:
